@@ -1,0 +1,39 @@
+name: Test Workflow Inputs
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment do you want to deploy to?"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+      message:
+        description: "Write a custom message"
+        required: false
+        default: "Hello from GitHub Actions!"
+        type: string
+
+      enable_feature:
+        description: "Enable the experimental feature?"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  test-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print chosen environment
+        run: echo "Environment: ${{ github.event.inputs.environment }}"
+
+      - name: Print message
+        run: echo "Message: ${{ github.event.inputs.message }}"
+
+      - name: Print boolean input
+        run: echo "Enable feature? ${{ github.event.inputs.enable_feature }}"
