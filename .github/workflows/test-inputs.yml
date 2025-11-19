@@ -30,10 +30,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Print chosen environment
-        run: echo "Environment: ${{ github.event.inputs.environment }}"
+        run: |
+          echo "Environment: ${{ github.event.inputs.environment }}"
 
       - name: Print message
-        run: echo "Message: ${{ github.event.inputs.message }}"
+        run: |
+          echo "Message: ${{ github.event.inputs.message }}"
 
       - name: Print boolean input
-        run: echo "Enable feature? ${{ github.event.inputs.enable_feature }}"
+        run: |
+          echo "Enable feature? ${{ github.event.inputs.enable_feature }}"
