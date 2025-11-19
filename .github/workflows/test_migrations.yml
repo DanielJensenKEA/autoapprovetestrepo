@@ -1,0 +1,127 @@
+name: Database Migration Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment do you want to deploy to?"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+      migration_command:
+        description: "What migration command to run?"
+        required: true
+        default: "up"
+        type: choice
+        options:
+          - up
+          - down
+          - status
+          - version
+          - create
+          - fix
+
+      migration_name:
+        description: "Name for new migration (if using 'create' command)"
+        required: false
+        type: string
+        default: ""
+
+      custom_message:
+        description: "Custom message for the migration"
+        required: false
+        type: string
+        default: "Running database migration"
+
+      dry_run:
+        description: "Dry run - show what would be executed without applying changes"
+        required: true
+        default: false
+        type: boolean
+
+      rollback_on_failure:
+        description: "Automatically rollback if migration fails?"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  database-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Print migration details
+        run: |
+          echo "=== Database Migration Configuration ==="
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Command: ${{ github.event.inputs.migration_command }}"
+          echo "Migration Name: ${{ github.event.inputs.migration_name }}"
+          echo "Custom Message: ${{ github.event.inputs.custom_message }}"
+          echo "Dry Run: ${{ github.event.inputs.dry_run }}"
+          echo "Rollback on Failure: ${{ github.event.inputs.rollback_on_failure }}"
+
+      - name: Validate migration command
+        run: |
+          if [ "${{ github.event.inputs.migration_command }}" == "create" ] && [ -z "${{ github.event.inputs.migration_name }}" ]; then
+            echo "Error: Migration name is required when using 'create' command"
+            exit 1
+          fi
+          echo "Migration command validation passed"
+
+      - name: Simulate Goose migration (up command)
+        if: github.event.inputs.migration_command == 'up'
+        run: |
+          echo "🚀 Applying all pending migrations..."
+          echo "This would run: goose [database connection] up"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "📋 DRY RUN: Would apply pending migrations"
+          else
+            echo "✅ Applying migrations to ${{ github.event.inputs.environment }} database"
+          fi
+
+      - name: Simulate Goose migration (down command)
+        if: github.event.inputs.migration_command == 'down'
+        run: |
+          echo "🔙 Rolling back the last migration..."
+          echo "This would run: goose [database connection] down"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "📋 DRY RUN: Would rollback last migration"
+          else
+            echo "⚠️ WARNING: Rolling back migration in ${{ github.event.inputs.environment }}"
+          fi
+
+      - name: Simulate Goose migration (status command)
+        if: github.event.inputs.migration_command == 'status'
+        run: |
+          echo "📊 Checking migration status..."
+          echo "This would run: goose [database connection] status"
+          echo "Showing current migration status for ${{ github.event.inputs.environment }}"
+
+      - name: Simulate Goose migration (create command)
+        if: github.event.inputs.migration_command == 'create'
+        run: |
+          echo "🆕 Creating new migration: ${{ github.event.inputs.migration_name }}"
+          echo "This would run: goose create ${{ github.event.inputs.migration_name }} sql"
+          echo "Creating migration files for: ${{ github.event.inputs.migration_name }}"
+
+      - name: Simulate rollback protection
+        if: github.event.inputs.rollback_on_failure == 'true'
+        run: |
+          echo "🛡️ Rollback protection enabled - will automatically revert on failure"
+
+      - name: Final summary
+        run: |
+          echo "=== Migration Summary ==="
+          echo "✅ Migration workflow completed successfully!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Command: ${{ github.event.inputs.migration_command }}"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "📋 NOTE: This was a dry run - no changes were made"
+          fi
